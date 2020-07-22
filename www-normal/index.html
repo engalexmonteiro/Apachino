@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html>
+    <head>
+    <title>Arduino Web Configuration</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="icon" href="src/favicon.ico">
+    
+    <link rel="stylesheet" href="src/styles.css">       
+</head>
+    <body>
+        <div id="menu" >
+            <div class="topnav" id="myTopnav">
+                <a href="index.html" class="active">Home</a>
+                <a href="status.html">Status</a>
+                <a href="setup.html">Setup</a>
+                <a href="sobre.html">About</a>
+                <a href="upload.html">Upgrade</a>
+                <a href="login.html">Logout</a>
+                <a href="javascript:void(0);" class="icon" onclick="myFunction()">
+                    <i class="fa fa-bars"></i>
+                </a>
+            </div>
+        </div>
+
+        <div id="conteudocentral" style="padding-left:16px">              
+            <h2>Responsive Topnav Example</h2>
+            <p>Resize the browser window to see how it works.</p>
+        </div>
+        
+
+    <script type="text/javascript">         
+              
+        document.addEventListener("DOMContentLoaded", function() {
+            var elements = document.querySelectorAll('#myTopnav a');
+            for (var i = 0; i < elements.length; i++) {
+                    elements[i].addEventListener('click', function(e) {
+                            document.getElementsByClassName("active")[0].setAttribute("class","");
+                            e.preventDefault();
+                            this.setAttribute('class','active');                            
+
+                            var href = this.getAttribute("href");
+                            
+                            var xhttp = new XMLHttpRequest();
+                            xhttp.onreadystatechange = function() {
+                                   if (this.readyState == 4 && this.status == 200) {
+                                        
+                                        var obj = document.createElement("obj");
+                                        obj.innerHTML = this.responseText;
+                                        
+                                        if (href != "login.html")                                               
+                                            document.getElementById("conteudocentral").innerHTML = obj.querySelector('#conteudocentral').innerHTML;
+                                        else
+                                            location.href = href;
+
+                                    }
+                            };
+                            xhttp.open("GET",href, true);
+                            xhttp.send();                                                                                                                                                                                          
+                            return false;
+                    });
+            }
+        });
+
+        function myFunction() {
+            var x = document.getElementById("myTopnav");
+            if (x.className === "topnav") {
+                x.className += " responsive";
+            } else {
+                x.className = "topnav";
+            }
+        }               
+        
+    </script>
+
+</body>
+</html>
