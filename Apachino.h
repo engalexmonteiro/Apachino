@@ -17,6 +17,7 @@
 // SD card chip select pin.
 #define SD_CS_PIN 4
 #define WWW "/wwwb"
+#define SRCDIR "src"
 #define MAINPAGE "login.html"
 #define JPG "jpg"
 #define PNG "png"

@@ -16,7 +16,7 @@
                 <a href="setup.html">Setup</a>
                 <a href="sobre.html">About</a>
                 <a href="upload.html">Upgrade</a>
-                <a href="login.html">Logout</a>
+                <a href="logout.html">Logout</a>
                 <a href="javascript:void(0);" class="icon" onclick="myFunction()">
                     <i class="fa fa-bars"></i>
                 </a>
@@ -49,9 +49,7 @@
                                         obj.innerHTML = this.responseText;
                                         
                                         if (href != "login.html")                                               
-                                            document.getElementById("conteudocentral").innerHTML = obj.querySelector('#conteudocentral').innerHTML;
-                                        else
-                                            location.href = href;
+                                            document.getElementById("conteudocentral").innerHTML = obj.querySelector('#conteudocentral').innerHTML;                                        
 
                                     }
                             };

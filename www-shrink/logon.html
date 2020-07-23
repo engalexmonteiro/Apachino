@@ -1,0 +1,4 @@
+HTTP/1.1 401 Authorization Required
+Content-Type: text/html
+Connnection: close
+<!DOCTYPE HTML><html><head><title>Logoff</title><script>document.execCommand('ClearAuthenticationCache', 'false');</script>  //IE logoff<script>try {                                                                //mozila logoffvar agt=navigator.userAgent.toLowerCase();if (agt.indexOf("msie") != -1) {document.execCommand("ClearAuthenticationCache");} else {var xmlhttp = createXMLObject();xmlhttp.open("GET","URL",true,"logout","logout");xmlhttp.send("");xmlhttp.abort();}} catch(e) {alert("erro ao fazer logoff");}function createXMLObject() {try {if (window.XMLHttpRequest) {xmlhttp = new XMLHttpRequest();} else if (window.ActiveXObject) {xmlhttp=new ActiveXObject("Microsoft.XMLHTTP");}} catch (e) {xmlhttp=false;}return xmlhttp;}</script></head><body><h1>Voce nao esta mais conectado</h1></body></html>

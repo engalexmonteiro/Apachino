@@ -71,9 +71,6 @@ bool read_send(EthernetClient client, char filename[]){
 boolean checkExt(const char *content, const char *ext){
 
          if(strstr(content,ext)){
-            Serial.println(content);
-    	    Serial.println(ext);
-        	Serial.println(true);
             return true;
          }
          else
@@ -98,7 +95,7 @@ void response_content(EthernetClient client, String contentS){
                if(checkExt(content,JS)){
             	   sprintf(contentType,"%stext/%s",contentType,JS);}
                if(checkExt(content,ICO)){
-            	   sprintf(contentType,"%simage/x-%s",contentType,ICO);}
+            	   sprintf(contentType,"%simage/x-icon",contentType);}
                if(checkExt(content,JPG)){
             	   sprintf(contentType,"%sfile/%s",contentType,JPG);}
                if(checkExt(content,PDF)){
@@ -110,7 +107,7 @@ void response_content(EthernetClient client, String contentS){
 
                 client.println(contentType);  // the connection will be closed after completion of the response
 
-                client.println("Connection: keep-alive");  // the connection will be closed after completion of the response
+                client.println("Connection: closed");  // the connection will be closed after completion of the response
 
 
           client.println();
@@ -120,44 +117,73 @@ void response_content(EthernetClient client, String contentS){
 
 }
 
+boolean loged = false;
 
 int processHtppRequest(EthernetServer server){
 
 	  // listen for incoming clients
 	  EthernetClient client = server.available();
+
+
 	  if (client) {
 	    Serial.println("new client");
-	    String request ="";
-	    String contentName = "";
+
+	    char request[30]="";
+	    uint8_t c_req = 0;
+	    boolean post = false;
+	    char contentName[20]="";
+
+	    memset(request, 0, sizeof(request));
+	    memset(contentName, 0, sizeof(contentName));
+
 	    // an http request ends with a blank line
 	    boolean currentLineIsBlank = true;
-	    boolean logado = false;
 
 	    while (client.connected()) {
 	      if (client.available()) {
 	        char c = client.read();
-	        request += c;
-	        //Serial.write(c);
-	        // if you've gotten to the end of the line (received a newline
-	        // character) and the line is blank, the http request has ended,
-	        // so you can send a reply
+
+	        if(c_req < sizeof(request)){
+	        	request[c_req] = c;
+	        	c_req++;
+	        }
+
+	        Serial.write(c);
 
 	        if (c == '\n' && currentLineIsBlank) {
-	          // send a standard http response header
-	          response_content(client,contentName.c_str());
 
+	          c_req = 0;
 
-	          contentName = "";
+	        	  while(client.available() and (c_req < 30)){
+	        		  request[c_req] =  (char)client.read();
+	        		  c_req++;
+	        	  }
+
+	          Serial.println(request);
+	          if(strstr(request,"admin")){
+	          	  loged = true;}
+
+	          if(loged){
+	        	  response_content(client,contentName);
+	          }else{
+	        	  response_content(client,"/"MAINPAGE);
+	          }
+	          memset(contentName, 0, sizeof(contentName));
+
 	          break;
 	        }
 	        if (c == '\n') {
 	          // you're starting a new line
 	          currentLineIsBlank = true;
+	          String req = request;
 
-	          if(request.indexOf("GET") != -1){
-	              contentName = request.substring(request.indexOf('/'),request.indexOf(" HTTP"));
-	              request ="";
+	          if(strstr(request,"GET") || (post = strstr(request,"POST"))){
+	              strcpy(contentName,req.substring(req.indexOf('/'),req.indexOf(" HTTP")).c_str());
 	          }
+	          req="";
+
+	          memset(request, 0, sizeof(request));
+	          c_req = 0;
 
 	        } else if (c != '\r') {
 	          // you've gotten a character on the current line
@@ -172,6 +198,7 @@ int processHtppRequest(EthernetServer server){
 	    //delay(1);
 	    // close the connection:
 	    client.stop();
+	    Serial.flush();
 	    Serial.println("client disconnected");
 	  }
 
