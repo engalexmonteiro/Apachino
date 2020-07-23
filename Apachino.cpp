@@ -67,45 +67,47 @@ bool read_send(EthernetClient client, char filename[]){
     return false;
 }
 
+//Check content extension
+boolean checkExt(const char *content, const char *ext){
 
-
-
-bool checkExt(char content[], char ext[]){
-
-         if(String(content).indexOf(String(ext)) != -1){
+         if(strstr(content,ext)){
+            Serial.println(content);
+    	    Serial.println(ext);
+        	Serial.println(true);
             return true;
          }
          else
             return false;
 }
 
-void response_content(EthernetClient client, char content[]){
+// Prepare and send response
+void response_content(EthernetClient client, String contentS){
 
-          String contentType = "Content-Type: ";
+		  const char content[30] = MAINPAGE;
+
+		  if(!contentS.equals("/"))
+		  	  contentS.toCharArray(content, sizeof(content), 1);
+
+          char contentType[30] = "Content-Type: ";
           client.println("HTTP/1.1 200 OK");
 
-                if(checkExt(content,JPG)){
-                   contentType += "file/";
-                   contentType += JPG;}
-                else if(checkExt(content,PDF)){
-                   contentType += "file/";
-                   contentType += PDF;   }
-                else if(checkExt(content,HTML)){
-                    contentType += "text/html";}
-                else if(checkExt(content,CSS)){
-                    contentType += "text/css";}
-                else if(checkExt(content,JS)){
-                    contentType += "text/javascript";}
-                else if(checkExt(content,ICO)){
-                    contentType += "image/x-ico";}
-                else if(checkExt(content,WEBP)){
-                    contentType += "file/webp";}
-                else if(checkExt(content,PNG)){
-                    contentType += "image/png";}
-                else
-                    contentType += "text/html";
+               if(checkExt(content,HTML)){
+          	  	   sprintf(contentType,"%stext/%s",contentType,HTML);}
+               if(checkExt(content,CSS)){
+                   sprintf(contentType,"%stext/%s",contentType,CSS);}
+               if(checkExt(content,JS)){
+            	   sprintf(contentType,"%stext/%s",contentType,JS);}
+               if(checkExt(content,ICO)){
+            	   sprintf(contentType,"%simage/x-%s",contentType,ICO);}
+               if(checkExt(content,JPG)){
+            	   sprintf(contentType,"%sfile/%s",contentType,JPG);}
+               if(checkExt(content,PDF)){
+            	   sprintf(contentType,"%sfile/%s",contentType,PDF);}
+               if(checkExt(content,WEBP)){
+            	   sprintf(contentType,"%simage/%s",contentType,WEBP);}
+               if(checkExt(content,PNG)){
+            	   sprintf(contentType,"%sfile/%s",contentType,PNG);}
 
-                Serial.println(contentType);  // the connection will be closed after completion of the response
                 client.println(contentType);  // the connection will be closed after completion of the response
 
                 client.println("Connection: keep-alive");  // the connection will be closed after completion of the response
@@ -129,6 +131,7 @@ int processHtppRequest(EthernetServer server){
 	    String contentName = "";
 	    // an http request ends with a blank line
 	    boolean currentLineIsBlank = true;
+	    boolean logado = false;
 
 	    while (client.connected()) {
 	      if (client.available()) {
@@ -142,6 +145,8 @@ int processHtppRequest(EthernetServer server){
 	        if (c == '\n' && currentLineIsBlank) {
 	          // send a standard http response header
 	          response_content(client,contentName.c_str());
+
+
 	          contentName = "";
 	          break;
 	        }
@@ -150,7 +155,7 @@ int processHtppRequest(EthernetServer server){
 	          currentLineIsBlank = true;
 
 	          if(request.indexOf("GET") != -1){
-	              contentName = request.substring(request.indexOf('/')+1,request.indexOf(" HTTP"));
+	              contentName = request.substring(request.indexOf('/'),request.indexOf(" HTTP"));
 	              request ="";
 	          }
 
