@@ -21,6 +21,8 @@
 
 #include "Apachino.h"
 
+//#define log
+
 SdFat sd;
 SdFile file;
 SdFile dirFile;
@@ -156,14 +158,16 @@ int processHtppRequest(EthernetServer server){
 
 
 	          if(loged and !logoff){
-	        	  response_content(client,contentName);
+	        		  response_content(client,contentName);
 	          }else{
-	        	  if(strstr(contentName,"logout")){
-	        		  logoff=true;
-	        		  read_send(client,"logar2.html");
+	        	  if(logoff){
+#ifdef log
+	        		  Serial.println("Send logoff....");
+#endif
+	        		  read_send(client,LOGOUTPG);
 	        	  }
 	        	  else
-	        		  read_send(client,"logar2.html");
+	        		  read_send(client,LOGINPG);
 	          }
 	          memset(contentName, 0, sizeof(contentName));
 
@@ -177,10 +181,8 @@ int processHtppRequest(EthernetServer server){
 	          if(strstr(request,"GET") || (post = strstr(request,"POST"))){
 	              strcpy(contentName,req.substring(req.indexOf('/'),req.indexOf(" HTTP")).c_str());
 	          }
-	          if(req.indexOf("YWRtaW46YWRtaW4") != -1){
-	        	      Serial.println("logado");
-	        	      loged = true;
-	          }
+	          if(req.indexOf(LOGOUTPG) != -1) logoff = true;
+	          if(req.indexOf(PASSWD) != -1) loged = true;
 	          req="";
 
 	          memset(request, 0, sizeof(request));
