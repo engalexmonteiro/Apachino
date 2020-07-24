@@ -42,12 +42,11 @@ void init_sdcart(){
 
 }
 
-bool read_send(EthernetClient client, char filename[]){
+boolean read_send(EthernetClient client, char filename[]){
 
 
     if (file.open(&dirFile,filename,O_RDONLY)) {
 
-          client.println();
           while(file.available()){
             client.write(file.read());
           }
@@ -95,7 +94,7 @@ void response_content(EthernetClient client, String contentS){
                if(checkExt(content,JS)){
             	   sprintf(contentType,"%stext/%s",contentType,JS);}
                if(checkExt(content,ICO)){
-            	   sprintf(contentType,"%simage/x-icon",contentType);}
+            	   sprintf(contentType,"%simage/x-%sn",contentType,ICO);}
                if(checkExt(content,JPG)){
             	   sprintf(contentType,"%sfile/%s",contentType,JPG);}
                if(checkExt(content,PDF)){
@@ -109,15 +108,15 @@ void response_content(EthernetClient client, String contentS){
 
                 client.println("Connection: closed");  // the connection will be closed after completion of the response
 
-
-          client.println();
+                if(checkExt(content,HTML) || checkExt(content,CSS) || checkExt(content,JS))
+                	client.println('\n');
 
           read_send(client,content);
 
 
 }
 
-boolean loged = false;
+
 
 int processHtppRequest(EthernetServer server){
 
@@ -128,9 +127,12 @@ int processHtppRequest(EthernetServer server){
 	  if (client) {
 	    Serial.println("new client");
 
-	    char request[30]="";
+	    char request[40]="";
 	    uint8_t c_req = 0;
+	    boolean loged = false;
+	    boolean logoff = false;
 	    boolean post = false;
+	    String token = "";
 	    char contentName[20]="";
 
 	    memset(request, 0, sizeof(request));
@@ -152,21 +154,16 @@ int processHtppRequest(EthernetServer server){
 
 	        if (c == '\n' && currentLineIsBlank) {
 
-	          c_req = 0;
 
-	        	  while(client.available() and (c_req < 30)){
-	        		  request[c_req] =  (char)client.read();
-	        		  c_req++;
-	        	  }
-
-	          Serial.println(request);
-	          if(strstr(request,"admin")){
-	          	  loged = true;}
-
-	          if(loged){
+	          if(loged and !logoff){
 	        	  response_content(client,contentName);
 	          }else{
-	        	  response_content(client,"/"MAINPAGE);
+	        	  if(strstr(contentName,"logout")){
+	        		  logoff=true;
+	        		  read_send(client,"logar2.html");
+	        	  }
+	        	  else
+	        		  read_send(client,"logar2.html");
 	          }
 	          memset(contentName, 0, sizeof(contentName));
 
@@ -179,6 +176,10 @@ int processHtppRequest(EthernetServer server){
 
 	          if(strstr(request,"GET") || (post = strstr(request,"POST"))){
 	              strcpy(contentName,req.substring(req.indexOf('/'),req.indexOf(" HTTP")).c_str());
+	          }
+	          if(req.indexOf("YWRtaW46YWRtaW4") != -1){
+	        	      Serial.println("logado");
+	        	      loged = true;
 	          }
 	          req="";
 
@@ -195,7 +196,7 @@ int processHtppRequest(EthernetServer server){
 	          //Serial.println(request);
 
 	    // give the web browser time to receive the data
-	    //delay(1);
+	    delay(1);
 	    // close the connection:
 	    client.stop();
 	    Serial.flush();
