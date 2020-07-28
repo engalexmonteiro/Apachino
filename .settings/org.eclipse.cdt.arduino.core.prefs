@@ -1,2 +1,2 @@
 eclipse.preferences.version=1
-libraries=["SdFat",{"package"\:"arduino","platform"\:"avr","library"\:"SPI"},"Ethernet"]
+libraries=["SD",{"package"\:"arduino","platform"\:"avr","library"\:"SPI"},"Ethernet"]

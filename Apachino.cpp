@@ -23,95 +23,94 @@
 
 //#define log
 
-SdFat sd;
-SdFile file;
-SdFile dirFile;
-
-
-
 void init_sdcart(){
-  if (!sd.begin(SD_CS_PIN, SD_SCK_MHZ(50))) {
-    Serial.println("SD card initalization error");
-    sd.initErrorHalt();
-  }
 
-  Serial.println(FreeStack());
-
-  if (!dirFile.open(WWW, O_RDONLY)) {
-    Serial.println("error web directory");
-    sd.initErrorHalt();
-  }
+	if (!SD.begin(PIN_SD_CARD)) { return false; }
 
 }
 
-boolean read_send(EthernetClient client, char filename[]){
 
 
-    if (file.open(&dirFile,filename,O_RDONLY)) {
+boolean read_send(EthernetClient client, const char *filename){
 
-          while(file.available()){
-            client.write(file.read());
-          }
+	 char path[22];
+	 if(strcmp(filename,"/"))
+		 sprintf(path,"%s%s",WWW,filename);
+	 else
+		 sprintf(path,"%s%s",WWW,MAINPAGE);
+	 //Serial.println(path);
 
-          file.close();
-          return true;
+	 File webFile = SD.open(path,FILE_READ);
+
+	  if (webFile) {
+	    while(webFile.available()) {
+	      client.write(webFile.read());
+	    }
+	    webFile.close();
+	    return true;
     } else{
-      if(!read_send(client,MAINPAGE)){
-          client.print("<html>conteudo: ");
-          client.print(filename);
-          client.println(" nao encontrado</html>");
-          Serial.println("conteudo nao encontrado");
-      }
-      return false;
+          client.print("<html>E100</html>");
+          //client.println("<a href=\"logout.html\">sair</a></html>");
+          //client.println(" nao encontrado</br> <a href=\"logout.html\">sair</a></html>");
+          Serial.println("E:100");
     }
 
     return false;
 }
 
-//Check content extension
-boolean checkExt(const char *content, const char *ext){
 
-         if(strstr(content,ext)){
-            return true;
-         }
-         else
-            return false;
+uint8_t html_status(EthernetClient client){
+
+	uint8_t i = 0;
+
+    client.println(HTTPOK);
+    client.print(CTENTP);
+    client.print(TEXT);
+    client.print("/");
+    client.println(HTML);
+    client.println(CONNEC);  // the connection will be closed after completion of the response
+    client.println("");  // the connection will be closed after completion of the response
+    read_send(client,"/header.htm");
+
+	for(i=0;i<10;i++)
+		client.println("Status Linha" + String(i) + "</br>");
+
+    read_send(client,"/footer.htm");
+
+	return 0;
 }
 
+
 // Prepare and send response
-void response_content(EthernetClient client, String contentS){
+void response_content(EthernetClient client, const char *content){
 
-		  const char content[30] = MAINPAGE;
+          char contentType[16];
+          client.println(HTTPOK);
+          client.print(CTENTP);
 
-		  if(!contentS.equals("/"))
-		  	  contentS.toCharArray(content, sizeof(content), 1);
+               if(strstr(content,HTM)){
+          	  	   sprintf(contentType,"%s/%s",TEXT,HTML);}
+               else if(strstr(content,CSS)){
+                   sprintf(contentType,"%s/%s",TEXT,CSS);}
+               else if(strstr(content,JS)){
+            	   sprintf(contentType,"%s/javascript",TEXT);}
+               else if(strstr(content,ICO)){
+            	   sprintf(contentType,"%s/x-%sn",IMAGE,ICO);}
+               else if(strstr(content,WEBP)){
+            	   sprintf(contentType,"%s/%s",IMAGE,WEBP);}
+               else if(strstr(content,JPG)){
+                   sprintf(contentType,"%s/%s",IMAGE,JPG);}
+               else if(strstr(content,PNG)){
+            	   sprintf(contentType,"%s/%s",IMAGE,PNG);}
+               else if(strstr(content,PDF)){
+                   sprintf(contentType,"%s%s",FILEN,"application/download");}
+               else
+            	   sprintf(contentType,"%s/%s",TEXT,HTML);
 
-          char contentType[30] = "Content-Type: ";
-          client.println("HTTP/1.1 200 OK");
+                client.println(contentType);
+                client.println(CONNEC);  // the connection will be closed after completion of the response
 
-               if(checkExt(content,HTML)){
-          	  	   sprintf(contentType,"%stext/%s",contentType,HTML);}
-               if(checkExt(content,CSS)){
-                   sprintf(contentType,"%stext/%s",contentType,CSS);}
-               if(checkExt(content,JS)){
-            	   sprintf(contentType,"%stext/%s",contentType,JS);}
-               if(checkExt(content,ICO)){
-            	   sprintf(contentType,"%simage/x-%sn",contentType,ICO);}
-               if(checkExt(content,JPG)){
-            	   sprintf(contentType,"%sfile/%s",contentType,JPG);}
-               if(checkExt(content,PDF)){
-            	   sprintf(contentType,"%sfile/%s",contentType,PDF);}
-               if(checkExt(content,WEBP)){
-            	   sprintf(contentType,"%simage/%s",contentType,WEBP);}
-               if(checkExt(content,PNG)){
-            	   sprintf(contentType,"%sfile/%s",contentType,PNG);}
-
-                client.println(contentType);  // the connection will be closed after completion of the response
-
-                client.println("Connection: closed");  // the connection will be closed after completion of the response
-
-                if(checkExt(content,HTML) || checkExt(content,CSS) || checkExt(content,JS))
-                	client.println('\n');
+                client.println();
 
           read_send(client,content);
 
@@ -127,14 +126,12 @@ int processHtppRequest(EthernetServer server){
 
 
 	  if (client) {
-	    Serial.println("new client");
+
 
 	    char request[40]="";
 	    uint8_t c_req = 0;
 	    boolean loged = false;
 	    boolean logoff = false;
-	    boolean post = false;
-	    String token = "";
 	    char contentName[20]="";
 
 	    memset(request, 0, sizeof(request));
@@ -158,12 +155,12 @@ int processHtppRequest(EthernetServer server){
 
 
 	          if(loged and !logoff){
-	        		  response_content(client,contentName);
+	        	  if(strstr(contentName,"teste.html"))
+	        		  html_status(client);
+	        	  else
+	        	  	  response_content(client,contentName);
 	          }else{
 	        	  if(logoff){
-#ifdef log
-	        		  Serial.println("Send logoff....");
-#endif
 	        		  read_send(client,LOGOUTPG);
 	        	  }
 	        	  else
@@ -176,14 +173,14 @@ int processHtppRequest(EthernetServer server){
 	        if (c == '\n') {
 	          // you're starting a new line
 	          currentLineIsBlank = true;
-	          String req = request;
 
-	          if(strstr(request,"GET") || (post = strstr(request,"POST"))){
-	              strcpy(contentName,req.substring(req.indexOf('/'),req.indexOf(" HTTP")).c_str());
+	          if(strstr(request,"GET")){
+	        	  sscanf(request,"GET %s HTTP/1.1",contentName);
+	        	//  Serial.println(contentName);
+	              //strcpy(contentName,req.substring(req.indexOf('/'),req.indexOf(" HTTP")).c_str());
 	          }
-	          if(req.indexOf(LOGOUTPG) != -1) logoff = true;
-	          if(req.indexOf(PASSWD) != -1) loged = true;
-	          req="";
+	          if(strstr(request,LOGOUTPG)) logoff = true;
+	          if(strstr(request,PASSWD)) loged = true;
 
 	          memset(request, 0, sizeof(request));
 	          c_req = 0;
@@ -202,7 +199,7 @@ int processHtppRequest(EthernetServer server){
 	    // close the connection:
 	    client.stop();
 	    Serial.flush();
-	    Serial.println("client disconnected");
+
 	  }
 
 	return 0;
